@@ -29,6 +29,10 @@ frame_id: "map"
 # Point cloud file path (relative to pcd/ directory)
 pcd_name: "random_map.pcd"
 
+# 文件超过门槛才对加载到内存中的地图做体素降采样，原文件不变。
+map_filter_threshold_mb: 50.0  # MiB；0 表示始终降采样
+map_filter_leaf_size: 0.1      # 体素边长，m
+
 # LiDAR Type
 # UNDEFINED = 0, AVIA = 1, GENERAL_360 = 2, MID_360 = 3
 lidar_type: 2

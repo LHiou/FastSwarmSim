@@ -1,6 +1,8 @@
+#include <cstdlib>
 #include <utility>
 
 #include "marsim_render/marsim_render.hpp"
+#include "marsim_render/map_filter.hpp"
 
 namespace marsim {
     using namespace std::chrono;
@@ -95,12 +97,6 @@ namespace marsim {
 
         // std::cout << "You Pushed a button, now open file: " << a_string.Get() << endl;
         load_pcd_file(map_filename, cloud_color_mesh);
-
-        //downsample pointcloud
-        // pcl::VoxelGrid<PointType> voxel_grid;
-        // voxel_grid.setInputCloud(cloud_color_mesh.makeShared());
-        // voxel_grid.setLeafSize(cfg_.downsample_res, cfg_.downsample_res, cfg_.downsample_res);
-        // voxel_grid.filter(cloud_color_mesh);
 
         //Map process
         init_pointcloud_data();
@@ -611,8 +607,12 @@ namespace marsim {
 
     void MarsimRender::load_pcd_file(std::string file_name, pcl::PointCloud<PointType>& cloud_color_mesh) {
         int status = pcl::io::loadPCDFile<PointType>(file_name, cloud_color_mesh);
-        if (status == -1) {
-            cout << "can't read file." << endl;
+        // 在地图上传 GPU 前按文件大小进行体素滤波；不生成或覆盖磁盘地图。
+        if (status == -1 || !FilterLargeMap(file_name, cfg_.map_filter_threshold_mb,
+                cfg_.map_filter_leaf_size, cloud_color_mesh))
+        {
+            std::cerr << "地图加载失败: " << file_name << std::endl;
+            std::exit(EXIT_FAILURE);
         }
     }
 

@@ -129,7 +129,10 @@ private:
 
     current_velocity_.header.frame_id = "map";
     current_odom_.header.frame_id = "map";
-    current_odom_.child_frame_id = "base_link";
+    // 多机场景的机体参考系必须与可视化发布的 TF 名称一致。
+    const std::string prefix = std::string(get_namespace()) == "/" ? "" :
+      std::string(get_namespace()).substr(1) + "/";
+    current_odom_.child_frame_id = prefix + "base_link";
     current_odom_.pose.pose = current_pose_.pose;
     current_odom_.twist.twist = current_velocity_.twist;
 
@@ -222,6 +225,15 @@ private:
     current_odom_.header.stamp = stamp;
     current_odom_.pose.pose = current_pose_.pose;
     current_odom_.twist.twist = current_velocity_.twist;
+    // Odometry 的速度属于 child_frame_id，需从本地 ENU 转到机体系。
+    tf2::Quaternion orientation;
+    tf2::fromMsg(current_pose_.pose.orientation, orientation);
+    const auto & velocity = current_velocity_.twist.linear;
+    const auto body = tf2::quatRotate(orientation.inverse(),
+      tf2::Vector3(velocity.x, velocity.y, velocity.z));
+    current_odom_.twist.twist.linear.x = body.x();
+    current_odom_.twist.twist.linear.y = body.y();
+    current_odom_.twist.twist.linear.z = body.z();
   }
 
   void publish_pose()

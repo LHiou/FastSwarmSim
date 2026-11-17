@@ -70,6 +70,8 @@ namespace marsim {
             loader.LoadParam("fy", fy, 250.0f, false);
             loader.LoadParam("line_number", line_number, 64, false);
             loader.LoadParam("downsample_res", downsample_res, 0.05f, false);
+            loader.LoadParam("map_filter_threshold_mb", map_filter_threshold_mb, 50.0, false);
+            loader.LoadParam("map_filter_leaf_size", map_filter_leaf_size, 0.1f, false);
             loader.LoadParam("yaw_fov", yaw_fov, 360.0f, false);
             loader.LoadParam("vertical_fov", vertical_fov, 77.4f, false);
             loader.LoadParam("depth_image_en", depth_image_en, false, false);
@@ -99,6 +101,8 @@ namespace marsim {
         int sensing_rate = 10;
         int lidar_type = LiDARType::UNDEFINED;
         std::string pcd_name{};
+        double map_filter_threshold_mb = 50.0;
+        float map_filter_leaf_size = 0.1f;
 
         int width = 350;
         int height = 350;

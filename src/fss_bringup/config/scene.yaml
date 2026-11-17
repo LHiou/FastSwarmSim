@@ -1,0 +1,17 @@
+# 默认使用 PX4 飞控仿真；ideal 使用理想运动模型。
+mode: px4
+use_sim_time: true
+real_time_factor: 1.0
+enable_sensing: true
+enable_visualizer: true
+
+vehicles:
+  - name: uav1
+    position: [0.0, 0.0, 0.0]  # 东、北、上，m
+    yaw_deg: 0.0
+    color: red
+  # 取消注释即可增加第二架飞机；每架飞机的 ROS 话题和 TF 独立。
+  # - name: uav2
+  #   position: [3.0, 0.0, 0.0]
+  #   yaw_deg: 90.0
+  #   color: blue
