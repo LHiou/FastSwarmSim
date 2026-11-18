@@ -463,6 +463,11 @@ void MulticopterPositionControl::Run()
 				}
 			}
 
+            // 地面爬升时清除积分，避免起飞斜坡的下降限速抵消低速上升指令。
+            if (_vehicle_land_detected.landed && _takeoff.getTakeoffState() == TakeoffState::rampup)
+            {
+                _control.resetIntegral();
+            }
 			// limit tilt during takeoff ramupup
 			const float tilt_limit_deg = (_takeoff.getTakeoffState() < TakeoffState::flight)
 						     ? _param_mpc_tiltmax_lnd.get() : _param_mpc_tiltmax_air.get();
