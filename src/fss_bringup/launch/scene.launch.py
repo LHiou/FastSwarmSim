@@ -17,7 +17,6 @@ def create_scene(context):
     with config_path.open(encoding="utf-8") as stream:
         scene = yaml.safe_load(stream)
     px4_share = Path(get_package_share_directory("fss_px4_sim"))
-    sensing_share = Path(get_package_share_directory("fss_sensing"))
     use_time = scene.get("use_sim_time", True)
     mode = scene.get("mode", "px4")
     if mode not in ("px4", "ideal"):
@@ -34,7 +33,7 @@ def create_scene(context):
             parameters=[{"use_sim_time": True, "publish_clock": True,
                          "max_real_time_factor": float(scene.get("real_time_factor", 1.0)),
                          "auto_start": True}], output="screen"))
-    lidar_config = str(sensing_share / "config/local_pointcloud_sim.yaml")
+    lidar_config = LaunchConfiguration("lidar_config").perform(context)
     for index, vehicle in enumerate(scene["vehicles"], start=1):
         name = vehicle["name"]
         x, y, z = map(float, vehicle.get("position", [0, 0, 0]))
@@ -68,9 +67,11 @@ def create_scene(context):
 
 
 def generate_launch_description():
-    """声明 scene 参数，默认使用包内的单机 PX4 场景。"""
+    """声明场景和 LiDAR 配置路径，默认使用各包自带的配置。"""
     default_scene = Path(get_package_share_directory("fss_bringup")) / "config/scene.yaml"
+    default_lidar = Path(get_package_share_directory("fss_sensing")) / "config/local_pointcloud_sim.yaml"
     return LaunchDescription([
         DeclareLaunchArgument("scene", default_value=str(default_scene)),
+        DeclareLaunchArgument("lidar_config", default_value=str(default_lidar)),
         OpaqueFunction(function=create_scene),
     ])
