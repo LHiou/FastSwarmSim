@@ -1,5 +1,7 @@
 #include <utility>
 
+#include <pcl/filters/voxel_grid.h>
+
 #include "marsim_render/marsim_render.hpp"
 
 namespace marsim {
@@ -97,10 +99,13 @@ namespace marsim {
         load_pcd_file(map_filename, cloud_color_mesh);
 
         //downsample pointcloud
-        // pcl::VoxelGrid<PointType> voxel_grid;
-        // voxel_grid.setInputCloud(cloud_color_mesh.makeShared());
-        // voxel_grid.setLeafSize(cfg_.downsample_res, cfg_.downsample_res, cfg_.downsample_res);
-        // voxel_grid.filter(cloud_color_mesh);
+        if (cloud_color_mesh.size() > cfg_.map_filter_threshold_points) {
+            const float leaf_size = cfg_.map_filter_leaf_size;
+            pcl::VoxelGrid<PointType> voxel_grid;
+            voxel_grid.setInputCloud(cloud_color_mesh.makeShared());
+            voxel_grid.setLeafSize(leaf_size, leaf_size, leaf_size);
+            voxel_grid.filter(cloud_color_mesh);
+        }
 
         //Map process
         init_pointcloud_data();
