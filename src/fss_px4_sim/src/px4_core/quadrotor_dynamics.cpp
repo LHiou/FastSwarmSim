@@ -87,6 +87,7 @@ void Dynamics::differentialEquation(const StateVector& x, StateVector& dxdt, dou
 
 void Dynamics::step(const double& start_time, const double& end_time)
 {
+  const Eigen::Vector3d previous_position = state_.pos;
   vectorizeState(state_vec_, state_); // vectorize state_ into state_vec_ vector
 
   auto save = state_vec_; // save vector before integrate
@@ -120,12 +121,16 @@ void Dynamics::step(const double& start_time, const double& end_time)
   state_.R = R;
 
   //@TODO: simulate floor, wall and obstacles that can not be passed through.
-  /* simulate the floor */
-  if (state_.pos[2] < 0.0)
+  /* Simulate a no-slip floor, retaining the horizontal position at touchdown. */
+  if (state_.pos[2] <= 0.0)
   {
+    if (previous_position[2] <= 0.0)
+    {
+      state_.pos.head<2>() = previous_position.head<2>();
+    }
     state_.pos[2] = 0.0;
-    state_.vel[2] = 0.0;
-    acc_[2] = 0.0;
+    state_.vel.setZero();
+    acc_.setZero();
   }
 }
 
