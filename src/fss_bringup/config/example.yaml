@@ -36,6 +36,8 @@ lidar_sim:
 
   # 场景地图
   pcd_name: random_map.pcd
+  map_filter_threshold_points: 1000000  # 超过此点数才降采样，0 表示始终降采样
+  map_filter_leaf_size: 0.1      # 体素边长，m
 
   # 雷达与扫描
   lidar_type: 2             # 1 = Avia，2 = 通用 360°，3 = MID-360
