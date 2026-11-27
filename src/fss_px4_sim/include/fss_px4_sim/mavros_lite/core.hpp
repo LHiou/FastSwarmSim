@@ -76,11 +76,6 @@ public:
   template<typename ParameterT>
   ParameterT declare_parameter(const std::string & name, const ParameterT & default_value)
   {
-    // PX4 节点会自动声明启动参数，复用已声明值以支持场景中的参考系配置。
-    if (node_.has_parameter(name))
-    {
-      return node_.get_parameter(name).get_value<ParameterT>();
-    }
     return node_.declare_parameter<ParameterT>(name, default_value);
   }
 

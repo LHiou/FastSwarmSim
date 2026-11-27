@@ -47,8 +47,8 @@ namespace yaml_loader {
 
     class YamlLoader {
     public:
-        explicit YamlLoader(const std::string& file_path) {
-            path_ = file_path;
+        explicit YamlLoader(const std::string& file_path, const std::string& section = {})
+            : path_(file_path), section_(section) {
             std::cout << "Load config file: " << path_ << std::endl;
         }
 
@@ -66,17 +66,19 @@ namespace yaml_loader {
 
     private:
         std::string path_;
+        std::string section_;
 
         template <typename T>
         bool loadParamInternal(const std::string& param_name, T& param_value, const T& default_value, bool required) {
-            const auto config_ = YAML::LoadFile(path_);
+            const auto root = YAML::LoadFile(path_);
+            const auto config = !section_.empty() && root[section_] ? root[section_] : root;
             YAML::Node tmp_node;
             if (containsSlash(param_name)) {
-                tmp_node = getNodeFromPath(param_name);
+                tmp_node = getNodeFromPath(config, param_name);
             }
             else {
-                if (config_[param_name]) {
-                    tmp_node = config_[param_name];
+                if (config[param_name]) {
+                    tmp_node = config[param_name];
                 }
             }
 
@@ -145,8 +147,7 @@ namespace yaml_loader {
             }
         }
 
-        [[nodiscard]] YAML::Node getNodeFromPath(const std::string& path) const {
-            auto node = YAML::LoadFile(path_);
+        [[nodiscard]] YAML::Node getNodeFromPath(YAML::Node node, const std::string& path) const {
             size_t pos = 0, next_pos;
 
             while ((next_pos = path.find('/', pos)) != std::string::npos) {

@@ -26,6 +26,13 @@ def load_config(context, arguments, vehicles):
         settings = yaml.safe_load(stream)
     if not isinstance(settings, dict):
         raise ValueError(f"{path}: expected a mapping of launch arguments")
+    if "launch" in settings:
+        launch_settings = settings["launch"]
+        if not isinstance(launch_settings, dict):
+            raise ValueError(f"{path}: launch must be a mapping")
+        if "lidar_sim" in settings:
+            launch_settings.setdefault("lidar_config", str(path.resolve()))
+        settings = launch_settings
     overrides = settings.pop("vehicles", [])
     if not isinstance(overrides, list):
         raise ValueError(f"{path}: vehicles must be a list")
@@ -78,7 +85,6 @@ def make_drones(context, vehicles):
                     launch_arguments={
                         "namespace": namespace,
                         "mav_sys_id": str(index),
-                        "local_position.child_frame_id": f"{namespace}/base_link",
                         "lidar_config": LaunchConfiguration("lidar_config"),
                         "use_perfect_drone": LaunchConfiguration("use_perfect_drone"),
                         "use_fss_sim_time": LaunchConfiguration("use_fss_sim_time"),

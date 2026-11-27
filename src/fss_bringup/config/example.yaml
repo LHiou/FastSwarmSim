@@ -1,0 +1,56 @@
+launch:
+  # 飞机与时钟
+  num_drones: 1
+  use_perfect_drone: false
+  use_fss_sim_time: true
+  real_time_factor: 1.0
+  sensing_enable: true
+
+  # 可视化
+  rviz_enable: false
+  enable_visualizer: true
+  vis.visualize_max_freq: 60.0
+  vis.visualize_path_time: 30.0
+
+  # 逐架无人机配置
+  # position 按东、北、上填写，单位 m
+  vehicles:
+    - namespace: uav1
+      position: [0.0, 0.0, 0.0]
+      yaw_deg: 0.0
+      color: red
+    # num_drones 改为 2 后，可取消下面的注释指定第二架的配置
+    # - namespace: uav2
+    #   position: [3.0, 0.0, 0.0]
+    #   yaw_deg: 90.0
+    #   color: blue
+
+lidar_sim:
+  # ROS 接口
+  use_odom: false
+  odom_topic: mavros/local_position/odom
+  pose_topic: mavros/local_position/pose
+  local_pc_topic: cloud_registered
+  global_pc_topic: global_pc
+  frame_id: map
+
+  # 场景地图
+  pcd_name: random_map.pcd
+
+  # 雷达与扫描
+  lidar_type: 2             # 1 = Avia，2 = 通用 360°，3 = MID-360
+  sensing_blind: 0.1        # m
+  sensing_horizon: 70.0     # m
+  sensing_rate: 10          # Hz
+  is_360lidar: true
+  yaw_fov: 360.0            # °，仅在 is_360lidar 为 false 时使用
+  vertical_fov: 77.4        # °
+  polar_resolution: 0.1     # °
+
+  # 投影与输出
+  fx: 250.0
+  fy: 250.0
+  downsample_res: 0.1       # m
+  depth_image_en: false
+  inf_point_en: false
+  print_time_consumption: false

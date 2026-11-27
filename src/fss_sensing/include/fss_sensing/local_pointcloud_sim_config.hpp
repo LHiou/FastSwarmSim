@@ -15,7 +15,7 @@ public:
 
   explicit LocalPointCloudSimConfig(const std::string & cfg_path)
   {
-    yaml_loader::YamlLoader loader(cfg_path);
+    yaml_loader::YamlLoader loader(cfg_path, "lidar_sim");
     loader.LoadParam("pose_topic", pose_topic, std::string("mavros/local_position/pose"), false);
     loader.LoadParam("odom_topic", odom_topic, std::string("mavros/local_position/odom"), false);
     loader.LoadParam("use_odom", use_odom, false, false);

@@ -51,7 +51,7 @@ namespace marsim {
         Config() = default;
 
         Config(const std::string& cfg_path, const ResourcePaths& resource_paths) {
-            yaml_loader::YamlLoader loader(cfg_path);
+            yaml_loader::YamlLoader loader(cfg_path, "lidar_sim");
             // required parameters
             loader.LoadParam("sensing_blind", sensing_blind, 0.1f, true);
             loader.LoadParam("sensing_horizon", sensing_horizon, 10.0f, true);

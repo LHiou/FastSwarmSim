@@ -277,7 +277,6 @@ def generate_launch_description():
                 "px4.mavlink_udp_local_port": LaunchConfiguration("px4.mavlink_udp_local_port"),
                 "px4.mavlink_udp_remote_port": LaunchConfiguration("px4.mavlink_udp_remote_port"),
                 "px4.mavlink_transport": LaunchConfiguration("px4.mavlink_transport"),
-                "local_position.child_frame_id": LaunchConfiguration("local_position.child_frame_id"),
                 "MAV_SYS_ID": LaunchConfiguration("mav_sys_id"),
                 "MAV_COMP_ID": LaunchConfiguration("mav_comp_id"),
                 "local_pos_source": LaunchConfiguration("local_pos_source"),

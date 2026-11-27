@@ -129,10 +129,8 @@ private:
 
     current_velocity_.header.frame_id = "map";
     current_odom_.header.frame_id = "map";
-    // 多机场景的机体参考系必须与可视化发布的 TF 名称一致。
-    const std::string prefix = std::string(get_namespace()) == "/" ? "" :
-      std::string(get_namespace()).substr(1) + "/";
-    current_odom_.child_frame_id = prefix + "base_link";
+
+    current_odom_.child_frame_id = "base_link";
     current_odom_.pose.pose = current_pose_.pose;
     current_odom_.twist.twist = current_velocity_.twist;
 
