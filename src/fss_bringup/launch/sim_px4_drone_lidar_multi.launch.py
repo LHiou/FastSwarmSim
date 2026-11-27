@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import yaml
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
@@ -13,7 +16,39 @@ from launch_ros.actions import Node, SetParameter
 from launch_ros.substitutions import FindPackageShare
 
 
-def make_drones(context):
+def load_config(context, arguments, vehicles):
+    filename = LaunchConfiguration("config").perform(context)
+    vehicles.clear()
+    if not filename:
+        return
+    path = Path(filename)
+    with path.open(encoding="utf-8") as stream:
+        settings = yaml.safe_load(stream)
+    if not isinstance(settings, dict):
+        raise ValueError(f"{path}: expected a mapping of launch arguments")
+    if "launch" in settings:
+        launch_settings = settings["launch"]
+        if not isinstance(launch_settings, dict):
+            raise ValueError(f"{path}: launch must be a mapping")
+        if "lidar_sim" in settings:
+            launch_settings.setdefault("lidar_config", str(path.resolve()))
+        settings = launch_settings
+    overrides = settings.pop("vehicles", [])
+    if not isinstance(overrides, list):
+        raise ValueError(f"{path}: vehicles must be a list")
+    vehicles.extend(overrides)
+    allowed = {argument.name for argument in arguments}
+    for name, value in settings.items():
+        if name not in allowed:
+            raise ValueError(f"{path}: unknown launch argument {name!r}")
+        if name in ("lidar_config", "rviz_config"):
+            value = (path.parent / value).resolve()
+        elif isinstance(value, bool):
+            value = str(value).lower()
+        context.launch_configurations.setdefault(name, str(value))
+
+
+def make_drones(context, vehicles):
     count = int(LaunchConfiguration("num_drones").perform(context))
     drones_per_row = int(LaunchConfiguration("drones_per_row").perform(context))
     startup_batch_size = int(LaunchConfiguration("startup_batch_size").perform(context))
@@ -32,14 +67,25 @@ def make_drones(context):
         "launch",
         "sim_px4_drone_lidar_single.launch.py",
     ])
-    drone_actions = [
-        GroupAction(
+    drone_actions = []
+    namespaces = set()
+    for offset in range(count):
+        index = offset + 1
+        vehicle = vehicles[offset] if offset < len(vehicles) else {}
+        namespace = vehicle.get("namespace", f"uav{index}").strip("/")
+        if not namespace or namespace in namespaces:
+            raise ValueError(f"Vehicle {index} needs a unique, non-empty namespace")
+        namespaces.add(namespace)
+        x, y, z = vehicle.get("position", [offset % drones_per_row, offset // drones_per_row, 1.0])
+        drone_actions.append(GroupAction(
             scoped=True,
             actions=[
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(single_launch),
                     launch_arguments={
-                        "namespace": f"uav{index}",
+                        "namespace": namespace,
+                        "mav_sys_id": str(index),
+                        "lidar_config": LaunchConfiguration("lidar_config"),
                         "use_perfect_drone": LaunchConfiguration("use_perfect_drone"),
                         "use_fss_sim_time": LaunchConfiguration("use_fss_sim_time"),
                         "enable_time_coordinator": "false",
@@ -49,15 +95,15 @@ def make_drones(context):
                         "vis.visualize_max_freq": LaunchConfiguration("vis.visualize_max_freq"),
                         "vis.enable_history_path": LaunchConfiguration("vis.enable_history_path"),
                         "vis.visualize_path_time": LaunchConfiguration("vis.visualize_path_time"),
-                        "vis.color": LaunchConfiguration("vis.color"),
-                        "init_x_metre": f"{(index - 1) % drones_per_row:.1f}",
-                        "init_y_metre": f"{(index - 1) // drones_per_row:.1f}",
+                        "vis.color": vehicle.get("color", LaunchConfiguration("vis.color")),
+                        "init_x_metre": str(float(x)),
+                        "init_y_metre": str(float(y)),
+                        "init_z_metre": str(float(z)),
+                        "init_yaw_deg": str(float(vehicle.get("yaw_deg", 0.0))),
                     }.items(),
                 ),
             ],
-        )
-        for index in range(1, count + 1)
-    ]
+        ))
     if startup_batch_delay_ms == 0:
         return drone_actions
 
@@ -82,7 +128,13 @@ def generate_launch_description():
         "sim_px4_drone_lidar_multi.rviz",
     ])
 
-    return LaunchDescription([
+    vehicles = []
+    arguments = [
+        DeclareLaunchArgument("real_time_factor", default_value=LaunchConfiguration("max_real_time_factor", default="1.0")),
+        DeclareLaunchArgument("start_coordinator_ui", default_value="false", choices=["true", "false"]),
+        DeclareLaunchArgument("lidar_config", default_value=PathJoinSubstitution([
+            FindPackageShare("fss_sensing"), "config", "local_pointcloud_sim.yaml",
+        ])),
         DeclareLaunchArgument(
             "num_drones",
             default_value="3",
@@ -166,7 +218,11 @@ def generate_launch_description():
             default_value=rviz_config,
             description="RViz configuration file used when RViz is enabled.",
         ),
-
+    ]
+    return LaunchDescription([
+        DeclareLaunchArgument("config", default_value="", description="Optional fleet launch YAML file."),
+        OpaqueFunction(function=load_config, args=[arguments, vehicles]),
+        *arguments,
         SetParameter(name="use_fss_sim_time", value=LaunchConfiguration("use_fss_sim_time")),
         SetParameter(name="use_sim_time", value=LaunchConfiguration("use_fss_sim_time")),
         GroupAction(
@@ -179,7 +235,11 @@ def generate_launch_description():
                         "' == 'true' and '", LaunchConfiguration("enable_time_coordinator"),
                         "' == 'true'",
                     ])),
-                    launch_arguments={"publish_clock": "true"}.items(),
+                    launch_arguments={
+                        "publish_clock": "true",
+                        "start_coordinator_ui": LaunchConfiguration("start_coordinator_ui"),
+                        "max_real_time_factor": LaunchConfiguration("real_time_factor"),
+                    }.items(),
                 ),
             ],
         ),
@@ -191,5 +251,5 @@ def generate_launch_description():
             arguments=["-d", LaunchConfiguration("rviz_config")],
             condition=IfCondition(LaunchConfiguration("rviz_enable")),
         ),
-        OpaqueFunction(function=make_drones),
+        OpaqueFunction(function=make_drones, args=[vehicles]),
     ])

@@ -24,6 +24,10 @@ def generate_launch_description():
     return LaunchDescription([
         SetEnvironmentVariable("RCUTILS_COLORIZED_OUTPUT", "1"), # force rcl log color
 
+        DeclareLaunchArgument("lidar_config", default_value=PathJoinSubstitution([
+            FindPackageShare("fss_sensing"), "config", "local_pointcloud_sim.yaml",
+        ])),
+        DeclareLaunchArgument("mav_sys_id", default_value="1"),
         DeclareLaunchArgument(
             "namespace",
             default_value="",
@@ -123,6 +127,7 @@ def generate_launch_description():
                     condition=IfCondition(LaunchConfiguration("enable_sensing")),
                     launch_arguments={
                         "use_fss_sim_time": use_fss_sim_time,
+                        "config_path": LaunchConfiguration("lidar_config"),
                     }.items(),
                 ),
             ],
@@ -160,6 +165,7 @@ def generate_launch_description():
                         "namespace": namespace,
                         "use_fss_sim_time": use_fss_sim_time,
                         "enable_time_coordinator": LaunchConfiguration("enable_time_coordinator"),
+                        "mav_sys_id": LaunchConfiguration("mav_sys_id"),
                         "init_x_East_metre": LaunchConfiguration("init_x_metre"),
                         "init_y_North_metre": LaunchConfiguration("init_y_metre"),
                         "init_z_Up_metre": LaunchConfiguration("init_z_metre"),

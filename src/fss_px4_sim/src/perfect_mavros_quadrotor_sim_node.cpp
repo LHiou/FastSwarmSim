@@ -129,6 +129,7 @@ private:
 
     current_velocity_.header.frame_id = "map";
     current_odom_.header.frame_id = "map";
+
     current_odom_.child_frame_id = "base_link";
     current_odom_.pose.pose = current_pose_.pose;
     current_odom_.twist.twist = current_velocity_.twist;
